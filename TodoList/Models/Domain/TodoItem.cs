@@ -21,6 +21,7 @@ namespace TodoList.Models.Domain
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
 
+        // Relations
         public Guid UserId { get; set; }
         public User user { get; set; }
     }
