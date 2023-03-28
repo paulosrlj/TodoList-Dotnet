@@ -10,6 +10,10 @@ using System.Text;
 using TodoList.Data;
 using TodoList.Models.Domain;
 using TodoList.Models.DTO;
+using TodoList.Repositories.Concrete;
+using TodoList.Repositories.Interfaces;
+using TodoList.Services;
+using TodoList.Services.Interfaces;
 using TodoList.Util;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,7 +30,6 @@ builder.Services.AddDbContext<TodoListDbContext>(options =>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<TodoListDbContext>()
     .AddDefaultTokenProviders();
-    //.AddRoles<IdentityRole>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -42,12 +45,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     );
 
 
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("meuValor", policy => policy.RequireClaim("meuValor"));
-    options.AddPolicy("TipoUsuário", policy => policy.RequireClaim("TipoUsuário"));
-});
+//builder.Services.AddAuthorization(options =>
+//{
+//    options.AddPolicy("meuValor", policy => policy.RequireClaim("meuValor"));
+//    options.AddPolicy("TipoUsuário", policy => policy.RequireClaim("TipoUsuário"));
+//});
 
 builder.Services.AddControllers();
 
@@ -63,7 +65,7 @@ builder.Services.AddApiVersioning(setup =>
 builder.Services.AddVersionedApiExplorer(o =>
 {
     o.GroupNameFormat = "'v'VVV";
-    o.SubstituteApiVersionInUrl = true;   // this is needed to work
+    o.SubstituteApiVersionInUrl = true;
 });
 
 builder.Services.AddSwaggerGen(options =>
@@ -87,17 +89,12 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // DI
-builder.Services.AddSingleton<JwtTokenUtil>();/*
-                                               * 
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = ctx =>
-    {
-        return new ResponseModel(ctx.ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage),
-            System.Net.HttpStatusCode.BadRequest);
-    }
-});
-*/
+builder.Services.AddSingleton<JwtTokenUtil>();
+
+// User
+builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IAuthService, AuthService>();
 
 var app = builder.Build();
 
