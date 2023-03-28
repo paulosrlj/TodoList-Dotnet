@@ -7,6 +7,8 @@ using System.Text;
 using TodoList.Data;
 using TodoList.Models.Domain;
 using TodoList.Models.DTO;
+using TodoList.Models.DTO.Inbound;
+using TodoList.Services.Interfaces;
 using TodoList.Util;
 using static TodoList.Models.Domain.JwtToken;
 
@@ -23,47 +25,26 @@ namespace TodoList.Controllers
         private readonly IConfiguration _configuration;
         private readonly JwtTokenUtil _jwtTokenUtil;
         private readonly TodoListDbContext _ctx;
+        private readonly IUserService _userService;
 
-        public UserController(UserManager<ApplicationUser> userManager,
-            IConfiguration configuration, JwtTokenUtil jwtTokenUtil, TodoListDbContext ctx)
+        public UserController(IUserService userService)
         {
-            _userManager = userManager;
-            _configuration = configuration;
-            _jwtTokenUtil = jwtTokenUtil;
-            _ctx = ctx;
+            _userService = userService;
         }
 
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] User model)
+        public async Task<IActionResult> Create([FromBody] InboundUser model)
         {
-            var user = new ApplicationUser { UserName = model.Username, Email = model.Email };
-
-            var result = await _userManager.CreateAsync(user, model.Password);
-
-            var errors = result.Errors.Select(e => e.Description);
-
-            var claims = new[]
+            try
             {
-                new Claim(JwtRegisteredClaimNames.UniqueName, model.Username),
-                new Claim(JwtRegisteredClaimNames.Email, model.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            if (result.Succeeded)
-            {
-                _ctx.Users.Add(model);
-                await _ctx.SaveChangesAsync();
-
-                var token = _jwtTokenUtil.BuildToken(model, claims);
-                return Ok(new ResponseModel(token));
+                var result = await _userService.Create(model);
+                return Created("/create", result);
             }
-            else
+            catch (Exception ex)
             {
-                return BadRequest(new ResponseModel(errors));
+                return BadRequest(new ResponseModel(ex.Message));
             }
-
         }
-
     }
 }
